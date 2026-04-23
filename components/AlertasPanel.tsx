@@ -1,7 +1,7 @@
 // components/AlertasPanel.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Bell,
   Calendar,
@@ -34,11 +34,7 @@ export function AlertasPanel({ data, onRiesgoClick }: AlertasPanelProps) {
     "todas",
   );
 
-  useEffect(() => {
-    generarAlertas();
-  }, [data]);
-
-  const generarAlertas = () => {
+  const generarAlertas = useCallback(() => {
     const nuevasAlertas: Alerta[] = [];
     const hoy = new Date();
     const hoyStr = hoy.toISOString().split("T")[0];
@@ -127,8 +123,10 @@ export function AlertasPanel({ data, onRiesgoClick }: AlertasPanelProps) {
     });
 
     setAlertas(nuevasAlertas);
-  };
-
+  }, [data]);
+  useEffect(() => {
+    generarAlertas();
+  }, [data]);
   // Actualizar la función getUltimoSeguimiento en AlertasPanel.tsx
   const getUltimoSeguimiento = (riesgo: Riesgo): string => {
     const hoy = new Date();
