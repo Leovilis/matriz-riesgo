@@ -58,28 +58,33 @@ export function SharePointSync({ onSync }: SharePointSyncProps) {
     }
   };
 
-  const handleSync = async (force = false) => {
-    setIsSyncing(true);
-    setError(null);
-
-    try {
-      await onSync(force);
-      setLastSync(new Date().toLocaleString());
+ const handleSync = async () => {
+  setIsSyncing(true);
+  setError(null);
+  
+  try {
+    // En lugar de llamar a /api/sharepoint-import, 
+    // solo verificamos si hay actualizaciones pendientes
+    const response = await fetch('/api/check-updates');
+    const data = await response.json();
+    
+    if (data.hayActualizacion) {
+      // Mostrar mensaje al usuario
+      alert(`Hay una actualización disponible del ${new Date(data.ultimaActualizacion.fecha).toLocaleString()}. Usá el botón "Importar Excel" para cargar los cambios.`);
       setHasPendingUpdate(false);
-
-      // Mostrar notificación de éxito
-      new Notification("Sincronización completada", {
-        body: "Los datos se han actualizado correctamente desde SharePoint",
-        icon: "/icon-192x192.png",
-        tag: "sync-success",
-      });
-    } catch (err) {
-      setError("Error al sincronizar con SharePoint");
-      console.error(err);
-    } finally {
-      setIsSyncing(false);
+    } else {
+      alert('No hay actualizaciones pendientes.');
     }
-  };
+    
+    setLastSync(new Date().toLocaleString());
+    
+  } catch (err) {
+    setError('Error al verificar actualizaciones');
+    console.error(err);
+  } finally {
+    setIsSyncing(false);
+  }
+};
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -112,7 +117,7 @@ export function SharePointSync({ onSync }: SharePointSyncProps) {
         </div>
 
         <button
-          onClick={() => handleSync(false)}
+          onClick={() => handleSync()}
           disabled={isSyncing}
           className="inline-flex items-center gap-2 ml-4 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >

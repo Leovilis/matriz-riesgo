@@ -2,119 +2,18 @@
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { Riesgo, Probabilidad, Impacto, EstadoAccion, Periodicidad, Eficacia } from '@/types/matriz';
-import { calcularCriticidad, calcularCriticidadResidual, obtenerRecomendacion } from '@/lib/formulas';
+import { calcularCriticidad } from '@/lib/formulas';
 
-const SHAREPOINT_SITE = process.env.SHAREPOINT_SITE;
-const SHAREPOINT_FILE = process.env.SHAREPOINT_FILE;
+export const dynamic = 'force-dynamic';
 
-// Función para parsear Excel a Riesgos
-function parseExcelToRiesgos(excelData: any[]): Riesgo[] {
-  const riesgos: Riesgo[] = [];
-  const now = new Date().toISOString();
+// Configuración de SharePoint
+const SHAREPOINT_SITE = 'https://sleimansa.sharepoint.com/sites/Sistemas';
+const SHAREPOINT_FILE_PATH = '/Documentos compartidos/F-GC-08 Matriz de Riesgos y oportunidades v.07.xlsx';
 
-  for (const row of excelData) {
-    const rowAny = row as any;
-    
-    // Saltar filas vacías
-    if (!rowAny['Área'] && !rowAny['Proceso']) continue;
-    if (rowAny['Área'] === 'Área') continue;
-    
-    const probabilidadRaw = rowAny['Probabilidad de que ocurra'] || 'Muy posible';
-    const impactoRaw = rowAny['Impacto que tendría si ocurre'] || 'Medio impacto';
-    
-    const probabilidad = ['Muy posible', 'Algo posible', 'Poco posible o improbable'].includes(probabilidadRaw) 
-      ? probabilidadRaw as Probabilidad 
-      : 'Muy posible';
-    const impacto = ['Alto impacto', 'Medio impacto', 'Bajo impacto'].includes(impactoRaw)
-      ? impactoRaw as Impacto
-      : 'Medio impacto';
-    
-    const tipo = rowAny['Tipo: Riesgo/ Oportunidad'] === 'Oportunidad' ? 'Oportunidad' : 'Riesgo';
-    
-    const periodicidadRaw = rowAny['Periodicidad de seguimiento'] || 'Anual';
-    const periodicidad = ['Mensual', 'Bimestral', 'Semestral', 'Anual', 'Según ocurrencia'].includes(periodicidadRaw)
-      ? periodicidadRaw as Periodicidad
-      : 'Anual';
-    
-    const estadoRaw = rowAny['Estado de las acciones'] || 'No iniciado';
-    const estadoAccion = ['No iniciado', 'En proceso', 'Finalizado'].includes(estadoRaw)
-      ? estadoRaw as EstadoAccion
-      : 'No iniciado';
-    
-    const formatExcelDate = (excelDate: any): string => {
-      if (!excelDate) return '';
-      if (typeof excelDate === 'string' && excelDate.match(/^\d{4}-\d{2}-\d{2}/)) {
-        return excelDate.split(' ')[0];
-      }
-      if (typeof excelDate === 'number') {
-        const date = XLSX.SSF.parse_date_code(excelDate);
-        return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
-      }
-      if (excelDate instanceof Date) {
-        return excelDate.toISOString().split('T')[0];
-      }
-      return '';
-    };
-    
-    const riesgo: Riesgo = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      area: rowAny['Área'] || 'SISTEMAS',
-      proceso: rowAny['Proceso'] || 'No especificado',
-      descripcion: rowAny['Descripción del Riesgo u Oportunidad'] || 'Sin descripción',
-      consecuencia: rowAny['Descripción de la consecuencia'] || 'Sin consecuencia',
-      tipo: tipo,
-      probabilidad: probabilidad,
-      impacto: impacto,
-      criticidad: calcularCriticidad(probabilidad, impacto),
-      acciones: rowAny['Acciones'] || 'Sin acciones definidas',
-      responsable: rowAny['Responsable'] || 'No asignado',
-      recursos: rowAny['Recursos'] || 'No especificado',
-      fechaComienzo: formatExcelDate(rowAny['Fecha comienzo']),
-      fechaFin: formatExcelDate(rowAny['Fecha fin']),
-      periodicidad: periodicidad,
-      estadoAccion: estadoAccion,
-      trimestre1: rowAny['PRIMER TRIMESTRE'] === 'X' || rowAny['PRIMER TRIMESTRE'] === true,
-      trimestre2: rowAny['SEGUNDO TRIMESTRE'] === 'X' || rowAny['SEGUNDO TRIMESTRE'] === true,
-      trimestre3: rowAny['TERCER TRIMESTRE'] === 'X' || rowAny['TERCER TRIMESTRE'] === true,
-      trimestre4: rowAny['CUARTO TRIMESTRE'] === 'X' || rowAny['CUARTO TRIMESTRE'] === true,
-      resultadoObservado: rowAny['Resultado observado'] || '',
-      eficacia: (rowAny['Declaración de eficacia'] as Eficacia) || 'Eficaz',
-      probabilidadResidual: probabilidad,
-      impactoResidual: impacto,
-      criticidadResidual: calcularCriticidad(probabilidad, impacto),
-      recomendacion: '',
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    riesgo.recomendacion = obtenerRecomendacion(riesgo.tipo, riesgo.criticidadResidual, riesgo.eficacia);
-    
-    riesgos.push(riesgo);
-  }
-  
-  return riesgos;
-}
-
-async function downloadFromSharePoint(): Promise<Buffer> {
-  // Placeholder - implementación pendiente con Microsoft Graph API
-  // Por ahora, lanzar error indicando que se necesita configurar
-  throw new Error('La descarga automática desde SharePoint requiere configuración de Microsoft Graph API');
-}
-
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const { force } = await request.json();
-    
-    // 1. Descargar el archivo desde SharePoint usando Microsoft Graph API
-    let fileBuffer: Buffer;
-    try {
-      fileBuffer = await downloadFromSharePoint();
-    } catch (error) {
-      console.error('Error downloading from SharePoint:', error);
-      return NextResponse.json({ 
-        error: 'No se pudo descargar el archivo desde SharePoint. Verifica la configuración.' 
-      }, { status: 500 });
-    }
+    // 1. Descargar el archivo desde SharePoint
+    const fileBuffer = await downloadFileFromSharePoint();
     
     // 2. Procesar el Excel
     const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
@@ -127,8 +26,90 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ success: true, data: riesgos });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error importing from SharePoint:', error);
-    return NextResponse.json({ error: 'Error al importar desde SharePoint' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message || 'Error al importar desde SharePoint' 
+    }, { status: 500 });
   }
+}
+
+async function downloadFileFromSharePoint(): Promise<Buffer> {
+  // Usar SharePoint REST API sin autenticación (para archivos públicos o con acceso de la app)
+  // Esta es una implementación básica - en producción necesitarás autenticación
+  
+  const fileUrl = `${SHAREPOINT_SITE}/_api/web/GetFileByServerRelativeUrl('${SHAREPOINT_FILE_PATH}')/$value`;
+  
+  // Método 1: Usar fetch con credenciales implícitas del navegador
+  // En Next.js API route, no hay credenciales del usuario, así que usamos un enfoque alternativo
+  
+  // Por ahora, retornamos un error claro
+  throw new Error('La descarga automática requiere configuración adicional. Usá el botón "Importar Excel" manual.');
+}
+
+function parseExcelToRiesgos(excelData: any[]): Riesgo[] {
+  const riesgos: Riesgo[] = [];
+  const now = new Date().toISOString();
+
+  for (const row of excelData) {
+    if (!row['Área'] && !row['Proceso']) continue;
+    
+    const probabilidadRaw = row['Probabilidad de que ocurra'] || 'Muy posible';
+    const impactoRaw = row['Impacto que tendría si ocurre'] || 'Medio impacto';
+    
+    const probabilidad = ['Muy posible', 'Algo posible', 'Poco posible o improbable'].includes(probabilidadRaw) 
+      ? probabilidadRaw as Probabilidad 
+      : 'Muy posible';
+    const impacto = ['Alto impacto', 'Medio impacto', 'Bajo impacto'].includes(impactoRaw)
+      ? impactoRaw as Impacto
+      : 'Medio impacto';
+    
+    const riesgo: Riesgo = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      area: row['Área'] || 'SISTEMAS',
+      proceso: row['Proceso'] || '',
+      descripcion: row['Descripción del Riesgo u Oportunidad'] || '',
+      consecuencia: row['Descripción de la consecuencia'] || '',
+      tipo: row['Tipo: Riesgo/ Oportunidad'] === 'Oportunidad' ? 'Oportunidad' : 'Riesgo',
+      probabilidad: probabilidad,
+      impacto: impacto,
+      criticidad: calcularCriticidad(probabilidad, impacto),
+      acciones: row['Acciones'] || '',
+      responsable: row['Responsable'] || '',
+      recursos: row['Recursos'] || '',
+      fechaComienzo: formatExcelDate(row['Fecha comienzo']),
+      fechaFin: formatExcelDate(row['Fecha fin']),
+      periodicidad: (row['Periodicidad de seguimiento'] as Periodicidad) || 'Anual',
+      estadoAccion: (row['Estado de las acciones'] as EstadoAccion) || 'No iniciado',
+      trimestre1: row['PRIMER TRIMESTRE'] === 'X',
+      trimestre2: row['SEGUNDO TRIMESTRE'] === 'X',
+      trimestre3: row['TERCER TRIMESTRE'] === 'X',
+      trimestre4: row['CUARTO TRIMESTRE'] === 'X',
+      resultadoObservado: row['Resultado observado'] || '',
+      eficacia: (row['Declaración de eficacia'] as Eficacia) || 'Eficaz',
+      probabilidadResidual: probabilidad,
+      impactoResidual: impacto,
+      criticidadResidual: calcularCriticidad(probabilidad, impacto),
+      recomendacion: '',
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    riesgos.push(riesgo);
+  }
+  
+  return riesgos;
+}
+
+function formatExcelDate(excelDate: any): string {
+  if (!excelDate) return '';
+  if (typeof excelDate === 'string' && excelDate.match(/^\d{4}-\d{2}-\d{2}/)) {
+    return excelDate.split(' ')[0];
+  }
+  if (typeof excelDate === 'number') {
+    const date = XLSX.SSF.parse_date_code(excelDate);
+    return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+  }
+  return '';
 }
