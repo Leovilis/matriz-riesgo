@@ -1,10 +1,10 @@
 // app/api/sharepoint-webhook/route.ts
 import { NextResponse } from 'next/server';
-import { setUltimaActualizacion } from './../check-updates/route';
+import { setUltimaActualizacion } from '@/lib/updateState';
 
 export const dynamic = 'force-dynamic';
 
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'tu-secreto-aqui'; // Recuerda configurar esta variable de entorno
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'tu-secreto-aqui';
 
 export async function POST(request: Request) {
   try {
@@ -17,15 +17,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log('📥 Webhook SharePoint recibido:', body);
 
-    // Guarda la información de la actualización
+    // Guardar la actualización usando la función auxiliar
     setUltimaActualizacion({
       fecha: body.modifiedTime || new Date().toISOString(),
-      usuario: body.modifiedBy || 'Sistema',
-      registros: body.registros || 0,
+      usuario: body.modifiedBy || 'SharePoint',
+      registros: body.registros || body.data?.length || 0,
     });
-
-    // Aquí procesarías el `body.data` (los riesgos) si Power Automate te los envía.
-    // Por ahora, solo registramos la notificación.
 
     return NextResponse.json({ 
       success: true, 
