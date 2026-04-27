@@ -1,25 +1,27 @@
 // app/page.tsx (actualizado con AlertasPanel)
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MatrizTable } from '@/components/MatrizTable';
-import { DashboardCards } from '@/components/DashboardCards';
-import { FiltersBar } from '@/components/FiltersBar';
-import { ActionButtons } from '@/components/ActionButtons';
-import { RiesgoFormModal } from '@/components/RiesgoFormModal';
-import { ImportButton } from '@/components/ImportButton';
-import { ExportButton } from '@/components/ExportButton';
-import { AlertasPanel } from '@/components/AlertasPanel';
-import { useMatriz } from '@/hooks/useMatriz';
-import { Riesgo, Criticidad, EstadoAccion } from '@/types/matriz';
+import { useState } from "react";
+import { MatrizTable } from "@/components/MatrizTable";
+import { DashboardCards } from "@/components/DashboardCards";
+import { FiltersBar } from "@/components/FiltersBar";
+import { ActionButtons } from "@/components/ActionButtons";
+import { RiesgoFormModal } from "@/components/RiesgoFormModal";
+import { ImportButton } from "@/components/ImportButton";
+import { ExportButton } from "@/components/ExportButton";
+import { AlertasPanel } from "@/components/AlertasPanel";
+import { useMatriz } from "@/hooks/useMatriz";
+import { Riesgo, Criticidad, EstadoAccion } from "@/types/matriz";
+import { SharePointSync } from "@/components/SharePointSync";
 
 export default function Home() {
-  const { data, loading, addRiesgo, updateRiesgo, deleteRiesgo, setData } = useMatriz();
+  const { data, loading, addRiesgo, updateRiesgo, deleteRiesgo, setData } =
+    useMatriz();
   const [searchFilters, setSearchFilters] = useState({
-    search: '',
-    area: '',
-    tipo: '',
-    criticidad: '',
+    search: "",
+    area: "",
+    tipo: "",
+    criticidad: "",
   });
   const [cardFilters, setCardFilters] = useState<{
     tipo?: string;
@@ -30,7 +32,7 @@ export default function Home() {
   const [selectedRiesgo, setSelectedRiesgo] = useState<Riesgo | undefined>();
 
   const handleCardFilterClick = (filterType: string, value: string) => {
-    if (value === '') {
+    if (value === "") {
       setCardFilters((prev) => {
         const newFilters = { ...prev };
         delete newFilters[filterType as keyof typeof newFilters];
@@ -51,19 +53,27 @@ export default function Home() {
   const filteredData = data.filter((item) => {
     if (searchFilters.search) {
       const searchLower = searchFilters.search.toLowerCase();
-      if (!item.descripcion.toLowerCase().includes(searchLower) &&
-          !item.consecuencia.toLowerCase().includes(searchLower)) {
+      if (
+        !item.descripcion.toLowerCase().includes(searchLower) &&
+        !item.consecuencia.toLowerCase().includes(searchLower)
+      ) {
         return false;
       }
     }
     if (searchFilters.area && item.area !== searchFilters.area) return false;
     if (searchFilters.tipo && item.tipo !== searchFilters.tipo) return false;
-    if (searchFilters.criticidad && item.criticidad !== searchFilters.criticidad) return false;
-    
+    if (
+      searchFilters.criticidad &&
+      item.criticidad !== searchFilters.criticidad
+    )
+      return false;
+
     if (cardFilters.tipo && item.tipo !== cardFilters.tipo) return false;
-    if (cardFilters.criticidad && item.criticidad !== cardFilters.criticidad) return false;
-    if (cardFilters.estado && item.estadoAccion !== cardFilters.estado) return false;
-    
+    if (cardFilters.criticidad && item.criticidad !== cardFilters.criticidad)
+      return false;
+    if (cardFilters.estado && item.estadoAccion !== cardFilters.estado)
+      return false;
+
     return true;
   });
 
@@ -89,7 +99,7 @@ export default function Home() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('¿Está seguro de que desea eliminar este registro?')) {
+    if (confirm("¿Está seguro de que desea eliminar este registro?")) {
       deleteRiesgo(id);
     }
   };
@@ -110,6 +120,27 @@ export default function Home() {
   const handleRiesgoClick = (riesgo: Riesgo) => {
     setSelectedRiesgo(riesgo);
     setIsModalOpen(true);
+  };
+
+  // Función para sincronizar desde SharePoint
+  const handleSharePointSync = async (force?: boolean) => {
+    // Llamar al endpoint que descarga y procesa el Excel desde SharePoint
+    const response = await fetch("/api/sharepoint-import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force }),
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      setData(result.data);
+      alert(
+        `Sincronización completada. Se importaron ${result.data.length} registros.`,
+      );
+    } else {
+      throw new Error(result.error);
+    }
   };
 
   return (
@@ -133,7 +164,7 @@ export default function Home() {
           </div>
         </div>
 
-        <DashboardCards 
+        <DashboardCards
           data={data}
           activeFilters={cardFilters}
           onFilterClick={handleCardFilterClick}
@@ -141,24 +172,37 @@ export default function Home() {
         />
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex gap-2">
-            <ActionButtons onAdd={handleAdd} onEdit={() => {}} onDelete={() => {}} showEditDelete={false} />
+          <div className="flex items-center gap-2">
+            <ActionButtons
+              onAdd={handleAdd}
+              onEdit={() => {}}
+              onDelete={() => {}}
+              showEditDelete={false}
+            />
             <ImportButton onImport={handleImport} />
             <ExportButton data={data} />
+            <SharePointSync onSync={handleSharePointSync} />
+            
           </div>
-          <FiltersBar onFilterChange={setSearchFilters} />
+          
         </div>
 
         <div className="text-sm text-gray-500">
+          <FiltersBar onFilterChange={setSearchFilters} />
           Mostrando {filteredData.length} de {data.length} registros
-          {(Object.keys(cardFilters).length > 0 || 
-            searchFilters.search || 
-            searchFilters.area || 
-            searchFilters.tipo || 
+          {(Object.keys(cardFilters).length > 0 ||
+            searchFilters.search ||
+            searchFilters.area ||
+            searchFilters.tipo ||
             searchFilters.criticidad) && (
             <button
               onClick={() => {
-                setSearchFilters({ search: '', area: '', tipo: '', criticidad: '' });
+                setSearchFilters({
+                  search: "",
+                  area: "",
+                  tipo: "",
+                  criticidad: "",
+                });
                 clearCardFilters();
               }}
               className="ml-2 text-blue-600 hover:text-blue-800"
@@ -168,8 +212,8 @@ export default function Home() {
           )}
         </div>
 
-        <MatrizTable 
-          data={filteredData} 
+        <MatrizTable
+          data={filteredData}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
