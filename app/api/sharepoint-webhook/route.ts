@@ -1,57 +1,47 @@
 // app/api/sharepoint-webhook/route.ts
 import { NextResponse } from 'next/server';
-import { Riesgo } from '@/types/matriz';
+import { setUltimaActualizacion } from './../check-updates/route';
 
-// Secret key para verificar que la solicitud viene de Power Automate
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'tu-secreto-aqui';
+export const dynamic = 'force-dynamic';
 
-// Datos en memoria (en producción usarías base de datos)
-let ultimaActualizacion: string | null = null;
-let ultimoArchivo: any = null;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'tu-secreto-aqui'; // Recuerda configurar esta variable de entorno
 
 export async function POST(request: Request) {
   try {
-    // Verificar autenticación
     const authHeader = request.headers.get('authorization');
+    
     if (authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const body = await request.json();
-    console.log('📄 Notificación recibida de SharePoint:', body);
+    console.log('📥 Webhook SharePoint recibido:', body);
 
-    // Guardar información de la actualización
-    ultimaActualizacion = new Date().toISOString();
-    ultimoArchivo = {
-      nombre: body.fileName,
-      ruta: body.filePath,
-      modificado: body.modifiedTime,
-      usuario: body.userEmail
-    };
-
-    // Aquí puedes:
-    // 1. Descargar el archivo automáticamente
-    // 2. Procesar los datos
-    // 3. Notificar a los usuarios
-    
-    // Por ahora, solo guardamos el registro
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Notificación recibida',
-      ultimaActualizacion 
+    // Guarda la información de la actualización
+    setUltimaActualizacion({
+      fecha: body.modifiedTime || new Date().toISOString(),
+      usuario: body.modifiedBy || 'Sistema',
+      registros: body.registros || 0,
     });
 
+    // Aquí procesarías el `body.data` (los riesgos) si Power Automate te los envía.
+    // Por ahora, solo registramos la notificación.
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Actualización recibida',
+      timestamp: new Date().toISOString()
+    });
+    
   } catch (error) {
     console.error('Error en webhook:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
 
-// Endpoint para consultar si hay actualizaciones pendientes
 export async function GET() {
-  return NextResponse.json({
-    ultimaActualizacion,
-    ultimoArchivo,
-    hayActualizacionPendiente: ultimaActualizacion !== null
+  return NextResponse.json({ 
+    status: 'ok', 
+    message: 'Webhook funcionando correctamente' 
   });
 }
