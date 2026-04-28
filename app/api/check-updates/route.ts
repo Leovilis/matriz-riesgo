@@ -1,14 +1,21 @@
 // app/api/check-updates/route.ts
 import { NextResponse } from 'next/server';
-import { getUltimaActualizacion } from '@/lib/updateState';
+import { getMetadata } from '@/lib/updateState';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 export async function GET() {
-  const ultimaActualizacion = getUltimaActualizacion();
-  return NextResponse.json({
-    hayActualizacion: ultimaActualizacion !== null,
-    ultimaActualizacion,
-  });
+  try {
+    const meta = await getMetadata();
+    return NextResponse.json({
+      hayActualizacion: meta !== null,
+      ultimaActualizacion: meta,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { hayActualizacion: false, error: String(error) },
+      { status: 500 }
+    );
+  }
 }
