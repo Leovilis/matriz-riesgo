@@ -172,7 +172,7 @@ export default function Home() {
         />
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2">
             <ActionButtons
               onAdd={handleAdd}
               onEdit={() => {}}
@@ -181,10 +181,8 @@ export default function Home() {
             />
             <ImportButton onImport={handleImport} />
             <ExportButton data={data} />
-            <SharePointSync onSync={handleSharePointSync} />
-            
+            <SharePointSync />
           </div>
-          
         </div>
 
         <div className="text-sm text-gray-500">
