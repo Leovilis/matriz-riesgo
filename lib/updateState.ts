@@ -1,9 +1,14 @@
 // lib/updateState.ts
-import { put, list } from '@vercel/blob';
+import Redis from 'ioredis';
 
-const BLOB_KEY = 'sharepoint-data.json';
+const redis = new Redis(process.env.REDIS_URL!, {
+  tls: process.env.REDIS_URL?.startsWith('rediss://') ? {} : undefined,
+  maxRetriesPerRequest: 3,
+});
 
-interface BlobContent {
+const KV_KEY = 'sharepoint-data';
+
+interface KVContent {
   ultimaActualizacion: {
     fecha: string;
     usuario: string;
@@ -18,7 +23,7 @@ export async function setUltimaActualizacion(data: {
   registros: number;
   datosCompletos: Record<string, string>[];
 }) {
-  const content: BlobContent = {
+  const content: KVContent = {
     ultimaActualizacion: {
       fecha: data.fecha,
       usuario: data.usuario,
@@ -27,42 +32,16 @@ export async function setUltimaActualizacion(data: {
     datos: data.datosCompletos,
   };
 
-  const blob = await put(BLOB_KEY, JSON.stringify(content), {
-    access: 'public',
-    addRandomSuffix: false,
-    contentType: 'application/json',
-  });
-
-  console.log('✅ Datos guardados en blob:', blob.url);
-  return blob.url;
+  await redis.set(KV_KEY, JSON.stringify(content));
+  console.log(`✅ ${data.registros} registros guardados en Redis`);
 }
 
 export async function getDatos(): Promise<Record<string, string>[]> {
   try {
-    // Usar list() para obtener la URL real — nunca construirla a mano
-    const { blobs } = await list({ prefix: BLOB_KEY });
-
-    if (blobs.length === 0) {
-      console.log('⚠️ No se encontró el blob:', BLOB_KEY);
-      return [];
-    }
-
-    const blobUrl = blobs[0].url;
-    console.log('📥 Leyendo desde:', blobUrl);
-
-    // Cache-busting para evitar respuestas viejas
-    const response = await fetch(`${blobUrl}?t=${Date.now()}`, {
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      console.error('Error leyendo blob:', response.status);
-      return [];
-    }
-
-    const content: BlobContent = await response.json();
+    const raw = await redis.get(KV_KEY);
+    if (!raw) return [];
+    const content: KVContent = JSON.parse(raw);
     return content.datos || [];
-
   } catch (error) {
     console.error('Error en getDatos:', error);
     return [];
@@ -71,15 +50,9 @@ export async function getDatos(): Promise<Record<string, string>[]> {
 
 export async function getMetadata() {
   try {
-    const { blobs } = await list({ prefix: BLOB_KEY });
-    if (blobs.length === 0) return null;
-
-    const response = await fetch(`${blobs[0].url}?t=${Date.now()}`, {
-      cache: 'no-store',
-    });
-    if (!response.ok) return null;
-
-    const content: BlobContent = await response.json();
+    const raw = await redis.get(KV_KEY);
+    if (!raw) return null;
+    const content: KVContent = JSON.parse(raw);
     return content.ultimaActualizacion || null;
   } catch {
     return null;
