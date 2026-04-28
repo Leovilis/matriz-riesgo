@@ -2,9 +2,7 @@
 import { NextResponse } from 'next/server';
 import { setUltimaActualizacion } from '@/lib/updateState';
 
-export const dynamic = 'force-dynamic';
-
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'tu-secreto-aqui';
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
 export async function POST(request: Request) {
   try {
@@ -15,24 +13,28 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    console.log('📥 Webhook SharePoint recibido:', body);
+    console.log('📥 Webhook recibido:', {
+      fileName: body.fileName,
+      modifiedBy: body.modifiedBy,
+      registros: body.data?.length
+    });
 
-    // Guardar la actualización usando la función auxiliar
-     setUltimaActualizacion({
-    fecha: body.modifiedTime,
-    usuario: body.modifiedBy,
-    registros: body.data?.length || 0,
-    datosCompletos: body.data // Guardar los datos del Excel
-  });
+    // Guardar en Vercel Blob
+    await setUltimaActualizacion({
+      fecha: body.modifiedTime || new Date().toISOString(),
+      usuario: body.modifiedBy || 'SharePoint',
+      registros: body.data?.length || 0,
+      datosCompletos: body.data || []
+    });
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Actualización recibida',
-      timestamp: new Date().toISOString()
+      message: 'Datos guardados correctamente',
+      registros: body.data?.length || 0
     });
     
   } catch (error) {
-    console.error('Error en webhook:', error);
+    console.error('Error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
