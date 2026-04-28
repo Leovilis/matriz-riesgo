@@ -1,9 +1,9 @@
-// lib/updateState.ts
-import { put, head, del } from '@vercel/blob';
+// lib/updateState.ts (con KV de Upstash)
+import { kv } from '@vercel/kv';
 
-const BLOB_KEY = 'sharepoint-data.json';
+const KEY_ULTIMA = 'sharepoint:ultima';
+const KEY_DATOS = 'sharepoint:datos';
 
-// Guardar datos en Blob
 export async function setUltimaActualizacion(data: {
   fecha: string;
   usuario: string;
@@ -11,71 +11,35 @@ export async function setUltimaActualizacion(data: {
   datosCompletos?: any[];
 }) {
   try {
-    const content = {
-      ultimaActualizacion: {
-        fecha: data.fecha,
-        usuario: data.usuario,
-        registros: data.registros,
-        timestamp: Date.now()
-      },
-      datos: data.datosCompletos || []
-    };
-    
-    const blob = await put(BLOB_KEY, JSON.stringify(content, null, 2), {
-      access: 'public',
-      addRandomSuffix: false,
+    await kv.set(KEY_ULTIMA, {
+      fecha: data.fecha,
+      usuario: data.usuario,
+      registros: data.registros,
+      timestamp: Date.now()
     });
     
-    console.log('✅ Datos guardados en Blob:', blob.url);
+    if (data.datosCompletos && data.datosCompletos.length > 0) {
+      await kv.set(KEY_DATOS, data.datosCompletos);
+    }
     return true;
   } catch (error) {
-    console.error('Error guardando en Blob:', error);
+    console.error('Error:', error);
     return false;
   }
 }
 
-// Obtener última actualización
 export async function getUltimaActualizacion() {
   try {
-    const url = `https://${process.env.BLOB_READ_WRITE_TOKEN}.blob.vercel-storage.com/${BLOB_KEY}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      if (response.status === 404) return null;
-      throw new Error('Error al leer');
-    }
-    
-    const data = await response.json();
-    return data.ultimaActualizacion || null;
-  } catch (error) {
-    console.log('No hay datos en Blob');
+    return await kv.get(KEY_ULTIMA);
+  } catch {
     return null;
   }
 }
 
-// Obtener datos completos
 export async function getDatos() {
   try {
-    const url = `https://${process.env.BLOB_READ_WRITE_TOKEN}.blob.vercel-storage.com/${BLOB_KEY}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      if (response.status === 404) return [];
-      throw new Error('Error al leer');
-    }
-    
-    const data = await response.json();
-    return data.datos || [];
+    return await kv.get(KEY_DATOS) || [];
   } catch {
     return [];
   }
-}
-
-// Verificar si hay actualizaciones pendientes
-export async function hasPendingUpdate(lastSyncTimestamp?: number) {
-  const ultima = await getUltimaActualizacion();
-  if (!ultima) return false;
-  
-  if (!lastSyncTimestamp) return true;
-  return ultima.timestamp > lastSyncTimestamp;
 }
