@@ -1,60 +1,87 @@
-// lib/updateState.ts - Versión corregida
-import { put } from '@vercel/blob';
+// lib/updateState.ts
+import { put, list } from '@vercel/blob';
 
-let cachedUrl: string | null = null;
+const BLOB_KEY = 'sharepoint-data.json';
+
+interface BlobContent {
+  ultimaActualizacion: {
+    fecha: string;
+    usuario: string;
+    registros: number;
+  };
+  datos: Record<string, string>[];
+}
 
 export async function setUltimaActualizacion(data: {
   fecha: string;
   usuario: string;
   registros: number;
-  datosCompletos?: any[];
+  datosCompletos: Record<string, string>[];
 }) {
+  const content: BlobContent = {
+    ultimaActualizacion: {
+      fecha: data.fecha,
+      usuario: data.usuario,
+      registros: data.registros,
+    },
+    datos: data.datosCompletos,
+  };
+
+  const blob = await put(BLOB_KEY, JSON.stringify(content), {
+    access: 'public',
+    addRandomSuffix: false,
+    contentType: 'application/json',
+  });
+
+  console.log('✅ Datos guardados en blob:', blob.url);
+  return blob.url;
+}
+
+export async function getDatos(): Promise<Record<string, string>[]> {
   try {
-    const content = {
-      ultimaActualizacion: {
-        fecha: data.fecha,
-        usuario: data.usuario,
-        registros: data.registros,
-        timestamp: Date.now()
-      },
-      datos: data.datosCompletos || []
-    };
-    
-    const blob = await put('sharepoint-data.json', JSON.stringify(content), {
-      access: 'public',
-      addRandomSuffix: false,
+    // Usar list() para obtener la URL real — nunca construirla a mano
+    const { blobs } = await list({ prefix: BLOB_KEY });
+
+    if (blobs.length === 0) {
+      console.log('⚠️ No se encontró el blob:', BLOB_KEY);
+      return [];
+    }
+
+    const blobUrl = blobs[0].url;
+    console.log('📥 Leyendo desde:', blobUrl);
+
+    // Cache-busting para evitar respuestas viejas
+    const response = await fetch(`${blobUrl}?t=${Date.now()}`, {
+      cache: 'no-store',
     });
-    
-    // Guardar la URL para usarla después
-    cachedUrl = blob.url;
-    console.log('✅ Datos guardados en:', blob.url);
-    return true;
+
+    if (!response.ok) {
+      console.error('Error leyendo blob:', response.status);
+      return [];
+    }
+
+    const content: BlobContent = await response.json();
+    return content.datos || [];
+
   } catch (error) {
-    console.error('Error:', error);
-    return false;
+    console.error('Error en getDatos:', error);
+    return [];
   }
 }
 
-export async function getUltimaActualizacion() {
+export async function getMetadata() {
   try {
-    const url = cachedUrl || `https://${process.env.BLOB_READ_WRITE_TOKEN}.blob.vercel-storage.com/sharepoint-data.json`;
-    const response = await fetch(url);
+    const { blobs } = await list({ prefix: BLOB_KEY });
+    if (blobs.length === 0) return null;
+
+    const response = await fetch(`${blobs[0].url}?t=${Date.now()}`, {
+      cache: 'no-store',
+    });
     if (!response.ok) return null;
-    const data = await response.json();
-    return data.ultimaActualizacion || null;
+
+    const content: BlobContent = await response.json();
+    return content.ultimaActualizacion || null;
   } catch {
     return null;
-  }
-}
-
-export async function getDatos() {
-  try {
-    const url = cachedUrl || `https://${process.env.BLOB_READ_WRITE_TOKEN}.blob.vercel-storage.com/sharepoint-data.json`;
-    const response = await fetch(url);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.datos || [];
-  } catch {
-    return [];
   }
 }

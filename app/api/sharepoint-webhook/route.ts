@@ -2,46 +2,52 @@
 import { NextResponse } from 'next/server';
 import { setUltimaActualizacion } from '@/lib/updateState';
 
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+export const dynamic = 'force-dynamic';
+
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
 
 export async function POST(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
-    
-    if (authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
+    if (WEBHOOK_SECRET && authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const body = await request.json();
-    console.log('📥 Webhook recibido:', {
-      fileName: body.fileName,
-      modifiedBy: body.modifiedBy,
-      registros: body.data?.length
-    });
 
-    // Guardar en Vercel Blob
-    await setUltimaActualizacion({
+    // El Office Script devuelve los datos como string JSON en body.data
+    let datosCompletos: Record<string, string>[] = [];
+
+    if (typeof body.data === 'string') {
+      datosCompletos = JSON.parse(body.data);
+    } else if (Array.isArray(body.data)) {
+      datosCompletos = body.data;
+    }
+
+    if (!datosCompletos.length) {
+      return NextResponse.json({ error: 'Sin datos válidos' }, { status: 400 });
+    }
+
+    // Guardar en Vercel Blob (persiste entre requests)
+    const blobUrl = await setUltimaActualizacion({
       fecha: body.modifiedTime || new Date().toISOString(),
       usuario: body.modifiedBy || 'SharePoint',
-      registros: body.data?.length || 0,
-      datosCompletos: body.data || []
+      registros: datosCompletos.length,
+      datosCompletos,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Datos guardados correctamente',
-      registros: body.data?.length || 0
+    return NextResponse.json({
+      success: true,
+      registros: datosCompletos.length,
+      blobUrl,
     });
-    
+
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    console.error('Error en webhook:', error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ 
-    status: 'ok', 
-    message: 'Webhook funcionando correctamente' 
-  });
+  return NextResponse.json({ status: 'ok' });
 }
