@@ -181,7 +181,7 @@ export default function Home() {
             />
             <ImportButton onImport={handleImport} />
             <ExportButton data={data} />
-            <SharePointSync />
+            <SharePointSync setData={setData} />
           </div>
         </div>
 
