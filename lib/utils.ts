@@ -1,41 +1,63 @@
 // lib/utils.ts
 export function getCriticidadColor(criticidad: string): string {
   switch (criticidad) {
-    case "Alta":
-      return "bg-red-100 text-red-700";
-    case "Media":
-      return "bg-yellow-100 text-yellow-700";
-    case "Baja":
-      return "bg-green-100 text-green-700";
+    case 'Alta':
+      return 'bg-red-100 text-red-700';
+    case 'Media':
+      return 'bg-yellow-100 text-yellow-700';
+    case 'Baja':
+      return 'bg-green-100 text-green-700';
     default:
-      return "bg-gray-100 text-gray-700";
+      return 'bg-gray-100 text-gray-700';
   }
 }
 
 export function getEstadoColor(estado: string): string {
   switch (estado) {
-    case "No iniciado":
-      return "bg-gray-100 text-gray-700";
-    case "En proceso":
-      return "bg-blue-100 text-blue-700";
-    case "Finalizado":
-      return "bg-green-100 text-green-700";
+    case 'No iniciado':
+      return 'bg-gray-100 text-gray-700';
+    case 'En proceso':
+      return 'bg-blue-100 text-blue-700';
+    case 'Finalizado':
+      return 'bg-green-100 text-green-700';
     default:
-      return "bg-gray-100 text-gray-700";
+      return 'bg-gray-100 text-gray-700';
   }
 }
-export function formatDate(dateString: string): string {
-  let year: number, month: number, day: number;
 
-  // Si viene con timestamp "2026-03-18 00:00:00"
-  if (dateString.includes(" ")) {
-    const datePart = dateString.split(" ")[0];
-    [year, month, day] = datePart.split("-").map(Number);
-  } else {
-    [year, month, day] = dateString.split("-").map(Number);
+/**
+ * Convierte cualquier formato de fecha a YYYY-MM-DD (para cálculos).
+ * Acepta: DD/MM/YYYY, YYYY-MM-DD, YYYY-MM-DD HH:mm:ss
+ */
+export function normalizarFecha(dateString: string): string {
+  if (!dateString || dateString.trim() === '') return '';
+
+  // DD/MM/YYYY → YYYY-MM-DD
+  if (dateString.includes('/')) {
+    const [day, month, year] = dateString.trim().split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
 
-  const formattedDay = String(day).padStart(2, "0");
-  const formattedMonth = String(month).padStart(2, "0");
-  return `${formattedDay}-${formattedMonth}-${year}`;
+  // YYYY-MM-DD HH:mm:ss → YYYY-MM-DD
+  if (dateString.includes(' ')) {
+    return dateString.split(' ')[0];
+  }
+
+  // Ya está en YYYY-MM-DD
+  return dateString.trim();
+}
+
+/**
+ * Formatea una fecha para mostrar en pantalla: DD-MM-YYYY
+ * Acepta cualquier formato (DD/MM/YYYY o YYYY-MM-DD)
+ */
+export function formatDate(dateString: string): string {
+  if (!dateString || dateString.trim() === '') return '-';
+
+  const normalizada = normalizarFecha(dateString);
+  const [year, month, day] = normalizada.split('-');
+
+  if (!year || !month || !day) return '-';
+
+  return `${day.padStart(2, '0')}-${month.padStart(2, '0')}-${year}`;
 }
