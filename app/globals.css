@@ -17,3 +17,26 @@
     overflow: hidden;
   }
 }
+
+/* app/globals.css - agregar al final */
+.table-row-hover tr:hover {
+  background-color: #f9fafb;
+}
+
+.table-cell-wrap {
+  white-space: normal !important;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* Altura mínima para filas */
+tbody tr {
+  min-height: 60px;
+}
+
+/* Para pantallas chicas - scroll horizontal */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}

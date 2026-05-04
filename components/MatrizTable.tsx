@@ -25,31 +25,52 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
     () => [
       columnHelper.accessor('area', {
         header: 'Área',
+        size: 120,
         cell: (info) => (
-          <span className="font-medium text-gray-900">{info.getValue()}</span>
+          <span className="font-medium text-gray-900 block whitespace-normal break-words">
+            {info.getValue()}
+          </span>
         ),
       }),
       columnHelper.accessor('proceso', {
         header: 'Proceso',
+        size: 180,
         cell: (info) => (
-          <span className="text-gray-700">{info.getValue()}</span>
+          <span className="text-gray-700 block whitespace-normal break-words">
+            {info.getValue()}
+          </span>
         ),
       }),
       columnHelper.accessor('descripcion', {
         header: 'Descripción',
+        size: 300,
         cell: (info) => (
           <div className="max-w-md">
-            <p className="text-gray-700 line-clamp-2">{info.getValue()}</p>
+            <p className="text-gray-700 break-words whitespace-normal">
+              {info.getValue()}
+            </p>
+          </div>
+        ),
+      }),
+      columnHelper.accessor('consecuencia', {
+        header: 'Consecuencia',
+        size: 250,
+        cell: (info) => (
+          <div className="max-w-sm">
+            <p className="text-gray-700 break-words whitespace-normal line-clamp-3 hover:line-clamp-none">
+              {info.getValue()}
+            </p>
           </div>
         ),
       }),
       columnHelper.accessor('tipo', {
         header: 'Tipo',
+        size: 100,
         cell: (info) => {
           const tipo = info.getValue();
           return (
             <span
-              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold whitespace-nowrap ${
                 tipo === 'Riesgo'
                   ? 'bg-red-100 text-red-700'
                   : 'bg-green-100 text-green-700'
@@ -62,11 +83,12 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
       }),
       columnHelper.accessor('criticidad', {
         header: 'Criticidad',
+        size: 100,
         cell: (info) => {
           const criticidad = info.getValue();
           return (
             <span
-              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getCriticidadColor(
+              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold whitespace-nowrap ${getCriticidadColor(
                 criticidad
               )}`}
             >
@@ -77,17 +99,21 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
       }),
       columnHelper.accessor('responsable', {
         header: 'Responsable',
+        size: 150,
         cell: (info) => (
-          <span className="text-gray-700">{info.getValue()}</span>
+          <span className="text-gray-700 block whitespace-normal break-words">
+            {info.getValue()}
+          </span>
         ),
       }),
       columnHelper.accessor('estadoAccion', {
         header: 'Estado',
+        size: 110,
         cell: (info) => {
           const estado = info.getValue();
           return (
             <span
-              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getEstadoColor(
+              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold whitespace-nowrap ${getEstadoColor(
                 estado
               )}`}
             >
@@ -98,16 +124,18 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
       }),
       columnHelper.accessor('fechaFin', {
         header: 'Fecha Fin',
+        size: 100,
         cell: (info) => {
           const fecha = info.getValue();
-          return <span className="text-gray-700">{formatDate(fecha)}</span>;
+          return <span className="text-gray-700 whitespace-nowrap">{formatDate(fecha)}</span>;
         },
       }),
       columnHelper.display({
         id: 'acciones',
         header: 'Acciones',
+        size: 80,
         cell: (info) => (
-          <div className="flex gap-2">
+          <div className="flex gap-2 whitespace-nowrap">
             <button
               onClick={() => onEdit(info.row.original)}
               className="rounded p-1 hover:bg-gray-100"
@@ -142,7 +170,8 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  style={{ width: header.column.columnDef.size }}
+                  className="px-3 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                 >
                   {flexRender(
                     header.column.columnDef.header,
@@ -155,11 +184,20 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="hover:bg-gray-50">
+            <tr 
+              key={row.id} 
+              className="hover:bg-gray-50 transition-colors"
+              style={{ height: 'auto' }}
+            >
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className="whitespace-nowrap px-4 py-3 text-sm text-gray-500"
+                  className="px-3 py-4 text-sm text-gray-500 align-top"
+                  style={{ 
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    verticalAlign: 'top'
+                  }}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
