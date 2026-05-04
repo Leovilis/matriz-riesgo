@@ -15,7 +15,9 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    // El Office Script devuelve los datos como string JSON en body.data
+    // Cada flujo de Power Automate envía su área hardcodeada en el body
+    const area: string = body.area?.trim() || 'SIN ÁREA';
+
     let datosCompletos: Record<string, string>[] = [];
 
     if (typeof body.data === 'string') {
@@ -25,11 +27,12 @@ export async function POST(request: Request) {
     }
 
     if (!datosCompletos.length) {
-      return NextResponse.json({ error: 'Sin datos válidos' }, { status: 400 });
+      console.log(`[${area}] Sin datos. Body:`, JSON.stringify(body).substring(0, 300));
+      return NextResponse.json({ error: 'Sin datos válidos', area }, { status: 400 });
     }
 
-    // Guardar en Vercel Blob (persiste entre requests)
-    const blobUrl = await setUltimaActualizacion({
+    await setUltimaActualizacion({
+      area,
       fecha: body.modifiedTime || new Date().toISOString(),
       usuario: body.modifiedBy || 'SharePoint',
       registros: datosCompletos.length,
@@ -38,8 +41,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      area,
       registros: datosCompletos.length,
-      blobUrl,
     });
 
   } catch (error) {
@@ -49,5 +52,5 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  return NextResponse.json({ status: 'ok' });
+  return NextResponse.json({ status: 'ok', message: 'Webhook activo' });
 }
