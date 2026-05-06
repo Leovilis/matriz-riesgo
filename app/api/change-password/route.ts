@@ -1,7 +1,7 @@
 // app/api/change-password/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/authOptions';  // ← Cambiar esta línea
 import { updateUserPassword, verifyCredentials } from '@/lib/users';
 
 export async function POST(request: Request) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Contraseña actualizada correctamente. Serás redirigido al inicio.' 
+      message: 'Contraseña actualizada correctamente'
     });
     
   } catch (error) {
