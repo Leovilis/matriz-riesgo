@@ -4,23 +4,12 @@ import type { Metadata } from 'next';
 // @ts-ignore
 import './globals.css';
 import { Inter } from 'next/font/google';
-
+import AuthProvider from '@/components/AuthProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Manzur Alertas - Riesgos y Oportunidades',
-  description: 'Visor de alertas de riesgos y oportunidades',
-  manifest: '/manifest.json',
-  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
-  themeColor: '#0069B3',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Manzur Alertas',
-  },
-  formatDetection: {
-    telephone: false,
-  },
+  title: 'Manzur - Matriz de Riesgos',
+  description: 'Sistema de Gestión de Calidad',
 };
 
 export default function RootLayout({
@@ -30,13 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <head>
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Manzur Alertas" />
-      </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }

@@ -25,9 +25,8 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
     () => [
       columnHelper.accessor('area', {
         header: 'Área',
-        size: 120,
         cell: (info) => (
-          <span className="font-medium text-gray-900 block whitespace-normal break-words">
+          <span className="font-normal text-gray-900 whitespace-nowrap">
             {info.getValue()}
           </span>
         ),
@@ -163,14 +162,18 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-      <table className="min-w-full divide-y divide-gray-200">
+      <table className="divide-y divide-gray-200" style={{ width: '100%', tableLayout: 'auto' }}>
         <thead className="bg-gray-50">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  style={{ width: header.column.columnDef.size }}
+                  style={
+                    header.column.id === 'area'
+                      ? { whiteSpace: 'nowrap', width: '1%' } // se ajusta al contenido
+                      : { width: header.column.columnDef.size }
+                  }
                   className="px-3 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                 >
                   {flexRender(
@@ -184,20 +187,19 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
           {table.getRowModel().rows.map((row) => (
-            <tr 
-              key={row.id} 
+            <tr
+              key={row.id}
               className="hover:bg-gray-50 transition-colors"
-              style={{ height: 'auto' }}
             >
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
                   className="px-3 py-4 text-sm text-gray-500 align-top"
-                  style={{ 
-                    whiteSpace: 'normal',
-                    wordBreak: 'break-word',
-                    verticalAlign: 'top'
-                  }}
+                  style={
+                    cell.column.id === 'area'
+                      ? { whiteSpace: 'nowrap', width: '1%' }
+                      : { whiteSpace: 'normal', wordBreak: 'break-word', verticalAlign: 'top' }
+                  }
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
