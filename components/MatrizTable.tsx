@@ -1,14 +1,16 @@
 // components/MatrizTable.tsx
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Riesgo } from '@/types/matriz';
 import { getCriticidadColor, getEstadoColor, formatDate } from '@/lib/utils';
 
@@ -21,10 +23,28 @@ interface MatrizTableProps {
 }
 
 export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+
   const columns = useMemo(
     () => [
       columnHelper.accessor('area', {
-        header: 'Área',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Área
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         cell: (info) => (
           <span className="font-normal text-gray-900 whitespace-nowrap">
             {info.getValue()}
@@ -32,7 +52,23 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         ),
       }),
       columnHelper.accessor('proceso', {
-        header: 'Proceso',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Proceso
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 180,
         cell: (info) => (
           <span className="text-gray-700 block whitespace-normal break-words">
@@ -41,7 +77,23 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         ),
       }),
       columnHelper.accessor('descripcion', {
-        header: 'Descripción',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Descripción
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 300,
         cell: (info) => (
           <div className="max-w-md">
@@ -52,7 +104,23 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         ),
       }),
       columnHelper.accessor('consecuencia', {
-        header: 'Consecuencia',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Consecuencia
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 250,
         cell: (info) => (
           <div className="max-w-sm">
@@ -63,7 +131,23 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         ),
       }),
       columnHelper.accessor('tipo', {
-        header: 'Tipo',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Tipo
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 100,
         cell: (info) => {
           const tipo = info.getValue();
@@ -81,10 +165,27 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         },
       }),
       columnHelper.accessor('criticidad', {
-        header: 'Criticidad',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Criticidad
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 100,
         cell: (info) => {
           const criticidad = info.getValue();
+          const priority = { Alta: 3, Media: 2, Baja: 1 };
           return (
             <span
               className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold whitespace-nowrap ${getCriticidadColor(
@@ -95,9 +196,31 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
             </span>
           );
         },
+        sortingFn: (rowA, rowB, columnId) => {
+          const priority = { Alta: 3, Media: 2, Baja: 1 };
+          const a = priority[rowA.getValue(columnId) as keyof typeof priority] || 0;
+          const b = priority[rowB.getValue(columnId) as keyof typeof priority] || 0;
+          return a - b;
+        },
       }),
       columnHelper.accessor('responsable', {
-        header: 'Responsable',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Responsable
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 150,
         cell: (info) => (
           <span className="text-gray-700 block whitespace-normal break-words">
@@ -106,7 +229,23 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         ),
       }),
       columnHelper.accessor('estadoAccion', {
-        header: 'Estado',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Estado
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 110,
         cell: (info) => {
           const estado = info.getValue();
@@ -122,7 +261,23 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
         },
       }),
       columnHelper.accessor('fechaFin', {
-        header: 'Fecha Fin',
+        header: ({ column }) => {
+          return (
+            <button
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+            >
+              Fecha Fin
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="h-3 w-3" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="h-3 w-3" />
+              ) : (
+                <ArrowUpDown className="h-3 w-3 opacity-50" />
+              )}
+            </button>
+          );
+        },
         size: 100,
         cell: (info) => {
           const fecha = info.getValue();
@@ -157,7 +312,12 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
   const table = useReactTable({
     data,
     columns,
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (
@@ -171,7 +331,7 @@ export function MatrizTable({ data, onEdit, onDelete }: MatrizTableProps) {
                   key={header.id}
                   style={
                     header.column.id === 'area'
-                      ? { whiteSpace: 'nowrap', width: '1%' } // se ajusta al contenido
+                      ? { whiteSpace: 'nowrap', width: '1%' }
                       : { width: header.column.columnDef.size }
                   }
                   className="px-3 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
