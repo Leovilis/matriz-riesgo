@@ -1,5 +1,5 @@
 // scripts/test-redis.js
-const Redis = require('ioredis');
+import { Redis } from '@upstash/redis'
 
 const redis = new Redis("redis://default:pSmFiVMqweddAg0OgA8424536dcV3V29@redis-12270.crce181.sa-east-1-2.ec2.cloud.redislabs.com:12270");
 

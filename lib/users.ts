@@ -1,9 +1,9 @@
 // lib/users.ts
 import bcrypt from 'bcryptjs';
-import Redis from 'ioredis';
+import { Redis } from '@upstash/redis'
 
 // Configurar conexión a Redis usando REDIS_URL
-const redis = new Redis(process.env.REDIS_URL as string);
+const redis = Redis.fromEnv();
 
 export interface User {
   id: string;
@@ -19,7 +19,7 @@ const USERS_KEY = 'users';
 
 // Hash generado para la contraseña "manzur2026"
 const DEFAULT_PASSWORD_HASH = "$2b$10$ngKmyEHMOXDuvqJEJR8HUeL1BQBHeivxoimcAPjNE5UcXrdFc3oHq";
-
+// const DEFAULT_PASSWORD_HASH = "manzur2026";
 // Usuarios iniciales
 const initialUsers: User[] = [
   { id: "1", email: "sistemas@manzuradministraciones.com", area: "SISTEMAS", role: "area", passwordHash: DEFAULT_PASSWORD_HASH, mustChangePassword: true, createdAt: new Date().toISOString() },
@@ -51,10 +51,8 @@ async function initializeUsers() {
 async function getAllUsers(): Promise<User[]> {
   try {
     await initializeUsers();
-    const data = await redis.get(USERS_KEY);
-    if (data) {
-      return JSON.parse(data) as User[];
-    }
+    const data = await redis.get<User[]>(USERS_KEY); // tipado genérico
+    if (data) return data; // sin JSON.parse
   } catch (error) {
     console.error('Error al obtener usuarios de Redis:', error);
   }
@@ -63,7 +61,7 @@ async function getAllUsers(): Promise<User[]> {
 
 // Guardar usuarios en Redis
 async function saveUsers(users: User[]): Promise<void> {
-  await redis.set(USERS_KEY, JSON.stringify(users));
+  await redis.set(USERS_KEY, users);
 }
 
 // Buscar usuario por email
